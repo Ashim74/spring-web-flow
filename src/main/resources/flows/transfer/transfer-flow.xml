@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<flow xmlns="http://www.springframework.org/schema/webflow"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.springframework.org/schema/webflow https://www.springframework.org/schema/webflow/spring-webflow.xsd"
+      start-state="enterDetails">
+
+    <on-start>
+        <set name="flowScope.transferForm" value="new com.example.webflowjsp.transfer.TransferForm()"/>
+    </on-start>
+
+    <view-state id="enterDetails" view="flows/transfer/enterDetails" model="transferForm">
+        <binder>
+            <binding property="fromAccount"/>
+            <binding property="toAccount"/>
+            <binding property="amount"/>
+        </binder>
+        <transition on="next" validate="true" to="confirm"/>
+    </view-state>
+
+    <view-state id="confirm" view="flows/transfer/confirm" model="transferForm">
+        <transition on="confirm" to="doTransfer"/>
+        <transition on="back" to="enterDetails"/>
+    </view-state>
+
+    <action-state id="doTransfer">
+        <evaluate expression="transferService.transfer(flowScope.transferForm)"/>
+        <evaluate expression="flashScope.put('successMessage', 'Transfer of $' + flowScope.transferForm.amount + ' from ' + flowScope.transferForm.fromAccount + ' to ' + flowScope.transferForm.toAccount + ' completed successfully.')"/>
+        <transition on="success" to="result"/>
+        <transition on-exception="java.lang.RuntimeException" to="enterDetails">
+            <evaluate expression="flashScope.put('errorMessage', 'Transfer failed: ' + exception.message)"/>
+        </transition>
+    </action-state>
+
+    <view-state id="result" view="flows/transfer/result">
+        <transition on="finish" to="done"/>
+    </view-state>
+
+    <end-state id="done"/>
+</flow>
